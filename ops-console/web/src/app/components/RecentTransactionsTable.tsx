@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { AuditTrail } from "./AuditTrail";
 
 
 import { useEffect, useState } from "react";
@@ -107,7 +108,7 @@ export default function RecentTransactionsTable() {
       </div>
     {selected && (
       <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-zinc-900 rounded shadow-lg p-6 w-full max-w-md relative">
+        <div className="bg-white dark:bg-zinc-900 rounded shadow-lg p-6 w-full max-w-2xl relative">
           <button
             className="absolute top-2 right-2 text-zinc-500 hover:text-zinc-800"
             onClick={() => setSelected(null)}
@@ -115,13 +116,14 @@ export default function RecentTransactionsTable() {
             &times;
           </button>
           <h3 className="text-lg font-bold mb-4">Transaction Details</h3>
-          <div className="space-y-2">
+          <div className="space-y-2 mb-4">
             <div><span className="font-semibold">ID:</span> <span className="font-mono">{selected.id}</span></div>
             <div><span className="font-semibold">Agent:</span> {selected.agent}</div>
             <div><span className="font-semibold">State:</span> {selected.state}</div>
             <div><span className="font-semibold">Started:</span> {selected.started}</div>
             {/* Add more fields/details as needed */}
           </div>
+          <AuditTrail transactionId={selected.id} />
         </div>
       </div>
     )}

@@ -3,9 +3,8 @@
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,10 +13,23 @@ model Transaction {
   id           String   @id @default(uuid())
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  agent        String?
+  started      DateTime?
   state        String
   context      Json
   steps        Json
   logs         Log[]
+  auditEvidence AuditEvidence[]
+}
+model AuditEvidence {
+  id             String   @id @default(uuid())
+  transactionId  String
+  timestamp      DateTime @default(now())
+  evidenceType   String
+  data           Json
+  signature      String
+  version        String
+  transaction    Transaction @relation(fields: [transactionId], references: [id])
 }
 
 model Log {

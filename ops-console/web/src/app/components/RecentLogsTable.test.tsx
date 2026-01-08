@@ -1,4 +1,5 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom";
 import { RecentLogsTable } from "./RecentLogsTable";
 
 // Mock fetch for logs
@@ -16,9 +17,10 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-  // @ts-ignore
+  // @ts-expect-error: Jest global fetch mock type mismatch
   global.fetch.mockClear();
-  delete global.fetch;
+  // @ts-expect-error: Jest global fetch mock type mismatch for delete
+  delete (global.fetch as typeof global.fetch | undefined);
 });
 
 describe("RecentLogsTable", () => {
@@ -47,7 +49,7 @@ describe("RecentLogsTable", () => {
   });
 
   it("shows error message on fetch failure", async () => {
-    // @ts-ignore
+    // @ts-expect-error: Jest global fetch mock type mismatch for implementationOnce
     global.fetch.mockImplementationOnce(() => Promise.resolve({ ok: false, json: () => Promise.resolve([]) }));
     render(<RecentLogsTable />);
     await waitFor(() => {
