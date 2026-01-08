@@ -54,18 +54,9 @@ The Transactional AI Control Plane & Governance Layer is a production-grade runt
 - **Invariants:** No partial/irreversible/silent/non-reproducible failures
 - **Transactional Integrity:** All-or-nothing execution, compensating actions for rollback
 - **Audit-Grade Evidence:** Every action is signed, timestamped, and replayable
-- **Identity Isolation:** Agents run with least privilege, isolated credentials
-- **Stress Tests:** Adversarial, incident, and credential compromise scenarios are tested and must not break invariants
-
 ---
-
 ## 5. Reference Implementation Agent
 
-**Example:** IAM Policy Auditor Agent
-
-- **Workflow:**
-  1. Enumerate all IAM policies
-  2. Validate against policy (e.g., no wildcards, no privilege escalation)
   3. Propose changes (with dry-run)
   4. Apply changes transactionally
   5. Rollback on failure
