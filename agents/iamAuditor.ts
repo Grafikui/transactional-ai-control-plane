@@ -16,8 +16,9 @@ export const validatePolicies: TransactionStep = {
   id: 'validate',
   type: 'Reversible',
   execute: async (context) => {
-    context.violations = context.policies.filter((p: any) => p.document.includes('*'));
-    if (context.violations.length > 0) throw new Error('Policy violation detected');
+    const violations = context.policies.filter((p: any) => p.document.includes('*'));
+    context.violations = violations;
+    if (violations.length > 0) throw new Error('Policy violation detected');
   },
   compensate: async (context) => {}, // No-op, but triggers rollback
   idempotencyKey: 'validate-1',

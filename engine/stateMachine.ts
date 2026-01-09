@@ -38,7 +38,7 @@ export class TransactionEngine {
         if (step.compensate) {
           await this.rollback();
           // After rollback, set state to 'RolledBack' and rethrow
-          throw err;
+          return this.transaction.state;
         } else {
           this.transaction.state = 'Halted';
           // Log halt evidence
