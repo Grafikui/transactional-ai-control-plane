@@ -19,7 +19,8 @@ const MockEmailService = {
 };
 
 async function main() {
-  const agent = new Transaction();
+  // FIX: Added 'demo-failure-tx' ID
+  const agent = new Transaction('demo-failure-tx');
 
   console.log("--- STARTING TRANSACTION ---");
 

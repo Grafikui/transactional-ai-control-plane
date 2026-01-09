@@ -13,7 +13,8 @@ describe('Transaction Engine', () => {
   });
 
   test('Happy Path: executes all steps sequentially', async () => {
-    const tx = new Transaction();
+    // FIX: Added 'test-tx-1' ID
+    const tx = new Transaction('test-tx-1');
 
     await tx.run(async (t) => {
       await t.step('step1', {
@@ -30,7 +31,8 @@ describe('Transaction Engine', () => {
   });
 
   test('Rollback: reverts previous steps in reverse order on failure', async () => {
-    const tx = new Transaction();
+    // FIX: Added 'test-tx-2' ID
+    const tx = new Transaction('test-tx-2');
 
     const task = tx.run(async (t) => {
       // Step 1: Succeeds
@@ -52,12 +54,13 @@ describe('Transaction Engine', () => {
     // Expect the run to throw the error "Boom"
     await expect(task).rejects.toThrow('Boom');
 
-    // Verify the log: Do 1 -> Do 2 -> Undo 1 (Step 2 never finished, so no undo for it)
+    // Verify the log: Do 1 -> Do 2 -> Undo 1
     expect(output).toEqual(['do 1', 'do 2 (fail)', 'undo 1']);
   });
 
   test('Double Fault: handles errors during rollback gracefully', async () => {
-    const tx = new Transaction();
+    // FIX: Added 'test-tx-3' ID
+    const tx = new Transaction('test-tx-3');
     
     // Silence console.error for this test since we expect it
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});

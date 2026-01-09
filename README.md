@@ -1,169 +1,129 @@
-# Transactional AI (Core)
+# transactional-ai
 
 **A reliability protocol for AI Agents.**
 
-This library prevents AI agents from leaving systems in broken or "zombie" states. It enforces a strict **Saga Pattern**, ensuring that multi-step agent actions either complete fully or roll back cleanly using defined compensating actions.
+[![npm version](https://img.shields.io/npm/v/transactional-ai.svg)](https://www.npmjs.com/package/transactional-ai)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## The Problem
-LLMs are non-deterministic. When an agent creates a file, updates a database, and then fails to send an email, your system is left in an inconsistent state.
+`transactional-ai` is a headless TypeScript library that enforces the **Saga Pattern** for AI workflows. It prevents agents from leaving systems in broken or "zombie" states by ensuring multi-step actions are either fully completed or cleanly rolled back.
 
-## The Solution
-`transactional-ai` provides a lightweight state machine that forces you to define an `undo` operation for every `do` operation.
+**Key Features:**
+* **Atomic Execution:** If Step 3 fails, Steps 1 & 2 are automatically reversed.
+* **Crash-Proof:** Persists state to Redis or Files; resumes automatically after server restarts.
+* **Audit-Ready:** Keeps a permanent log of every agent action for governance.
+* **Zero-UI:** Pure TypeScript library; includes a CLI for inspection.
 
-## Usage (The Litmus Test)
+---
+
+## Installation
+
+```bash
+npm install transactional-ai
+```
+
+---
+
+## Quick Start
+
+### 1. The "Litmus Test" (Basic Usage)
+Define a transaction where every do action has a compensating undo action.
 
 ```typescript
-import { Transaction } from '@transactional-ai/core';
+import { Transaction } from 'transactional-ai';
 
-const agent = new Transaction();
+// 1. Create a named transaction (required for resumability)
+const agent = new Transaction('user-onboarding-123');
 
 await agent.run(async (tx) => {
-    // Step 1: Create Resource
+    // Step 1: Create a resource
     const fileId = await tx.step('create-file', {
         do: () => googleDrive.createFile('report.txt'),
-        undo: (result) => googleDrive.deleteFile(result.id) 
+        undo: (result) => googleDrive.deleteFile(result.id)
     });
 
-    // Step 2: External Action
+    // Step 2: Risky external action
     await tx.step('email-report', {
         do: () => emailService.send(fileId),
-        undo: () => emailService.recall(fileId) 
+        undo: () => emailService.recall(fileId)
     });
 });
 ```
 
-## Features
-- Atomic Steps: Every step is tracked.
-- Auto-Rollback: If Step 3 fails, Step 2 and Step 1 are automatically reversed.
-- Resumability: (Coming Soon) Persist state to Redis to resume crashed agents.
-  4. Apply changes transactionally
-  5. Rollback on failure
-- **Validation:** All changes must pass policy checks before commit
-- **Rollback:** If any step fails, revert all changes using compensating actions
-- **Diagram:**
+### 2. Adding Persistence (Redis)
+To survive process crashes, provide a storage adapter.
 
-```mermaid
-stateDiagram-v2
-    [*] --> Enumerate
-    Enumerate --> Validate
-    Validate --> Propose
-    Propose --> Apply
-    Apply --> [*]: Success
-    Apply --> Rollback: Failure
-    Rollback --> [*]
+```typescript
+import { Transaction, RedisStorage } from 'transactional-ai';
+
+const storage = new RedisStorage('redis://localhost:6379');
+const agent = new Transaction('workflow-id-555', storage);
+
+// If the process crashes during execution, running this code again
+// will automatically SKIP completed steps and resume at the failure point.
+await agent.run(async (tx) => { /* ... */ });
 ```
 
 ---
 
-## 6. Acceptance Criteria
+## CLI Inspector
 
-- Atomic execution: all-or-nothing
-- Hard policy enforcement: no bypass
-- Immediate halt/kill switch
-- Deterministic replay from evidence
-- Identity isolation for all agent actions
-- Validation and rollback for every workflow
+You don't need a dashboard to see what your agents are doing. Use the included CLI to inspect transaction logs.
 
----
-
-## 7. Strategic Non-Goals
-
-- Not a general-purpose workflow engine
-- Not a replacement for cloud-native policy engines (e.g., OPA)
-- Does not allow agents to self-modify policies or runtime
-- No support for non-transactional, best-effort, or probabilistic actions
-
----
-
-## 8. Technical Architecture & Implementation Plan
-
-### Architecture Diagram
-
-```mermaid
-flowchart TD
-    subgraph Control Plane
-        PolicyEngine
-        TransactionEngine
-        EvidenceLog
-        OpsConsole
-        LLMAdapters
-    end
-    subgraph Agents
-        ReferenceAgent
-    end
-    ReferenceAgent -->|Requests| ControlPlane
-    PolicyEngine -->|Enforces| TransactionEngine
-    TransactionEngine -->|Records| EvidenceLog
-    OpsConsole -->|Manages| ControlPlane
-    LLMAdapters -->|Integrates| ControlPlane
+```bash
+# Inspect a specific transaction ID
+npx tai-inspect workflow-id-555
 ```
 
-### Components
-- **Execution Substrate:** State machine with explicit rollback handlers
-- **Policy Engine:** OPA/Rego or custom DSL for policy checks
-- **LLM Provider Integration:** Adapter pattern for OpenAI, Anthropic, Gemini
-- **Logging/Replay:** Event sourcing, signed evidence, replay CLI
-- **Kill Switch:** Immediate halt via Ops Console/API
-- **Ops Console:** Web/CLI for monitoring, incident response, and policy management
-- **Reference Agent:** IAM Policy Auditor as MVP
+Output:
 
-### Implementation Plan (MVP/MVA)
-1. State machine execution engine with rollback
-2. Policy engine integration
-3. Evidence log and replay CLI
-4. LLM provider adapters
-5. Ops Console (CLI, then web)
-6. Reference agent (IAM Policy Auditor)
-7. Stress test suite
-8. Enterprise features (see below)
+```
+🔍 Inspecting: workflow-id-555
+     Source: RedisStorage
+
+     STEP NAME            | STATUS
+     ------------------------------------
+     ├── create-file      | ✅ completed
+     └── email-report     | ⏳ pending
+```
 
 ---
 
-## 9. Open Source & Monetization Strategy
+## Advanced Usage
 
-| Feature                | OSS Core | Enterprise/SaaS |
-|------------------------|----------|-----------------|
-| Transactional Engine   | Yes      | Yes             |
-| Policy Engine          | Yes      | Yes             |
-| Multi-LLM Integration  | Yes      | Yes             |
-| Ops Console (CLI)      | Yes      | Yes             |
-| Ops Console (Web)      | No       | Yes             |
-| Advanced Audit/Replay  | No       | Yes             |
-| SSO/Identity Vault     | No       | Yes             |
-| Incident Response API  | No       | Yes             |
-| Enterprise Support     | No       | Yes             |
+### Audit Mode (Governance)
+By default, logs are cleared upon success to save space. To keep a permanent audit trail for compliance:
 
-**Adoption Plan:**
-- Launch OSS core on GitHub with reference agent and CLI console
-- Provide SaaS/enterprise add-ons (web console, SSO, advanced audit, support)
-- Target SRE, compliance, and platform engineering communities
+```typescript
+const agent = new Transaction('id', storage, {
+    cleanupOnSuccess: false
+});
+```
 
----
+### Manual Rollbacks
+The library handles rollbacks automatically on error. You can also trigger them manually inside your workflow logic:
 
-## 10. Next Steps / Roadmap
-
-1. State machine execution engine
-2. Policy engine integration
-3. Evidence log and replay CLI
-4. LLM provider adapters
-5. Ops Console (CLI, then web)
-6. Reference agent (IAM Policy Auditor)
-7. Stress test suite
-8. Enterprise features rollout
+```typescript
+await tx.step('check-balance', {
+    do: async () => {
+        if (balance < 10) throw new Error("Insufficient funds"); // Triggers auto-rollback
+    },
+    undo: () => {}
+});
+```
 
 ---
 
-## 11. Deliverables
+## Roadmap
 
-- Architecture diagrams (see above)
-- State machine and workflow diagrams
-- Reference agent workflow (IAM Policy Auditor)
-- Capabilities table (see above)
-- OSS vs Enterprise feature table
-- Step-by-step implementation plan
-- Stress test suite and expected results
-- MVP/MVA definition
+- [x] Core Saga Engine (Do/Undo)
+- [x] Persistence Adapters (File, Redis)
+- [x] Resumability (Skip completed steps)
+- [x] CLI Inspector
+- [ ] Concurrent Transaction Locking
+- [ ] Postgres/SQL Storage Adapter
 
 ---
 
-**End of Blueprint**
+## License
+
+MIT
