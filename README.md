@@ -140,6 +140,13 @@ agent.step({
 });
 ```
 
+## Limitations (v0.1.0)
+This release is designed as a Single-Process MVP.
+
+1. Concurrency: Do not run the same transaction-id across multiple worker processes simultaneously. Distributed locking (Redlock) is not yet implemented, so race conditions may occur if you horizontally scale workers on the same ID.
+
+2. Storage: Currently supports Redis and local FileSystem. SQL adapters are in development.
+
 ---
 
 ## Roadmap
