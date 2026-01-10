@@ -1,6 +1,6 @@
 {
   "name": "transactional-ai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A reliability protocol for AI Agents. Saga pattern with persistent rollback.",
   "main": "dist/index.js",
   "bin": {
