@@ -5,6 +5,7 @@ Implement the Saga Pattern with persistent rollback and state recovery for Long-
 
 [![npm version](https://img.shields.io/npm/v/transactional-ai.svg)](https://www.npmjs.com/package/transactional-ai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![CI](https://github.com/Grafikui/transactional-ai-control-plane/actions/workflows/ci.yml/badge.svg)
 
 ## Why use this?
 AI Agents are flaky. Steps fail, APIs time out, and hallucinations happen.
